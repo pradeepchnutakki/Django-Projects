@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tree Simulation</title>
+</head>
+<body>
+    <h1>{{ tree.name }}</h1>
+    <a href="?grow=1">Grow Tree</a>
+    {% for branch in branches %}
+        <h2>Branch {{ forloop.counter }}</h2>
+        <ul>
+            {% for fruit in branch.fruit_set.all %}
+                <li>{{ fruit }}</li>
+            {% empty %}
+                <li>No fruits yet.</li>
+            {% endfor %}
+        </ul>
+    {% endfor %}
+</body>
+</html>
