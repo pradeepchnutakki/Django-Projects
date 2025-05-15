@@ -1,17 +1,24 @@
 from django.shortcuts import render
-from .models import Tree, Branch
+from django.http import JsonResponse
+from .models import Branch
 
 def simulate_tree(request):
-    tree, _ = Tree.objects.get_or_create(name='My Tree')
-    if tree.branches.count() == 0:
-        for _ in range(3):
-            tree.branches.add(Branch.objects.create())
+    # Grow logic (if grow=1 in URL)
+    return render(request, "simulation/tree.html")
 
-    if request.GET.get("grow") == "1":
-        tree.grow()
-
-    context = {
-        "tree": tree,
-        "branches": tree.branches.all(),
+def tree_data(request):
+    data = {
+        "branches": [
+            {
+                "id": branch.id,
+                "fruits": [
+                    {
+                        "size": fruit.size,
+                        "ripeness": fruit.ripeness
+                    } for fruit in branch.fruit_set.all()
+                ]
+            }
+            for branch in Branch.objects.all()
+        ]
     }
-    return render(request, "simulation/tree.html", context)
+    return JsonResponse(data)

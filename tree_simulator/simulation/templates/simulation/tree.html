@@ -1,20 +1,110 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Tree Simulation</title>
+  <meta charset="UTF-8">
+  <title>3D Tree Simulation</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    #container { width: 100vw; height: 100vh; display: block; }
+    #ui {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(255,255,255,0.9);
+      padding: 10px;
+      border-radius: 8px;
+      z-index: 10;
+    }
+  </style>
 </head>
 <body>
-    <h1>{{ tree.name }}</h1>
-    <a href="?grow=1">Grow Tree</a>
-    {% for branch in branches %}
-        <h2>Branch {{ forloop.counter }}</h2>
-        <ul>
-            {% for fruit in branch.fruit_set.all %}
-                <li>{{ fruit }}</li>
-            {% empty %}
-                <li>No fruits yet.</li>
-            {% endfor %}
-        </ul>
-    {% endfor %}
+  <div id="ui">
+    <h2>🌳 3D Tree</h2>
+    <a href="/?grow=1">Grow Tree</a>
+  </div>
+
+  <div id="container"></div>
+
+  <!-- Include Three.js -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+  <!-- Script for 3D scene -->
+  <script>
+    console.log("✅ Script started");
+
+    // Check THREE.js version
+    console.log("Three.js version:", THREE.REVISION);
+
+    // Create scene, camera, and renderer
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById("container").appendChild(renderer.domElement);
+    console.log("✅ Renderer added");
+
+    // Add light
+    const light = new THREE.PointLight(0xffffff, 1, 100);
+    light.position.set(5, 5, 5);
+    scene.add(light);
+    scene.add(new THREE.AmbientLight(0x404040));
+
+    // Add tree trunk
+    const trunk = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.2, 0.2, 2, 16),
+      new THREE.MeshStandardMaterial({ color: 0x8B4513 })
+    );
+    trunk.position.y = 1;
+    scene.add(trunk);
+    console.log("✅ Trunk added");
+
+    // Load data
+    fetch("/tree-data/")
+      .then(response => {
+        if (!response.ok) throw new Error("Failed to fetch /tree-data/");
+        return response.json();
+      })
+      .then(data => {
+        console.log("✅ Data loaded", data);
+
+        const branchMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
+
+        data.branches.forEach((branch, i) => {
+          const angle = (i / data.branches.length) * Math.PI * 2;
+          const x = Math.cos(angle), z = Math.sin(angle);
+
+          const branchMesh = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.05, 0.05, 1, 12),
+            branchMaterial
+          );
+          branchMesh.position.set(x, 2, z);
+          scene.add(branchMesh);
+
+          branch.fruits.forEach((fruit, j) => {
+            const color = fruit.ripeness >= 100 ? 0xff0000 : fruit.ripeness >= 50 ? 0xff9900 : 0x00ff00;
+            const fruitMesh = new THREE.Mesh(
+              new THREE.SphereGeometry(fruit.size / 10, 16, 16),
+              new THREE.MeshStandardMaterial({ color })
+            );
+            fruitMesh.position.set(x + (Math.random() - 0.5) * 0.5, 2.5 + j * 0.2, z + (Math.random() - 0.5) * 0.5);
+            scene.add(fruitMesh);
+          });
+        });
+
+        animate();
+      })
+      .catch(err => {
+        console.error("❌ Error loading data:", err);
+        alert("Failed to load tree data. See console for details.");
+      });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+
+    camera.position.z = 5;
+    camera.position.y = 2;
+  </script>
 </body>
 </html>

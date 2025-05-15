@@ -1,6 +1,9 @@
+from django.contrib import admin
 from django.urls import path
-from .views import simulate_tree
+from simulation import views
 
 urlpatterns = [
-    path('', simulate_tree, name='simulate_tree'),
+    path("admin/", admin.site.urls),
+    path("", views.simulate_tree, name="simulate_tree"),
+    path("tree-data/", views.tree_data, name="tree_data"),
 ]
